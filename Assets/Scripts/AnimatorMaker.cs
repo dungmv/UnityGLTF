@@ -10,7 +10,6 @@ using UnityEngine.Playables;
 using UnityEngine.UI;
 using GLTFast;
 using UnityGLTF;
-using System.IO;
 using WrapMode = UnityEngine.WrapMode;
 
 public class AnimatorMaker : MonoBehaviour
@@ -49,6 +48,9 @@ public class AnimatorMaker : MonoBehaviour
 
     [DllImport("__Internal")]
     private static extern void OnAvatarLoadFailed(string url, string msg);
+
+    [DllImport("__Internal")]
+    private static extern void OnAvatarCombineCompleted(byte[] data, int size);
 #endif
 
     private void Start()
@@ -232,8 +234,11 @@ public class AnimatorMaker : MonoBehaviour
             }
         };
         GLTFSceneExporter exporter = new GLTFSceneExporter(avatar.transform, options);
-        exporter.SaveGLB(Path.Combine(Application.dataPath, "Models"), "Avatar.glb");
-        Debug.LogFormat("Save file completed " + Path.Combine(Application.dataPath, "Models", "Avatar.glb"));
+        var bytes = exporter.SaveGLBToByteArray("Avatar");
+        Debug.LogFormat("Save file completed " + bytes.Length);
+#if UNITY_WEBGL && !UNITY_EDITOR
+        OnAvatarCombineCompleted(bytes, bytes.Length);
+#endif
     }
 }
 

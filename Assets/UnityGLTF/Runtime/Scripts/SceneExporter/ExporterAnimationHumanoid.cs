@@ -55,6 +55,7 @@ namespace UnityGLTF
 			recorder.UpdateRecording(time);
 
 			recorder.EndRecording(out var data);
+			playableGraph.Destroy();
 			if (data == null || !data.Any()) return;
 
 			string CalculatePath(Transform child, Transform parent)

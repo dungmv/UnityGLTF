@@ -1,10 +1,5 @@
-#if UNITY_EDITOR
 #define ANIMATION_EXPORT_SUPPORTED
-#endif
-
-#if ANIMATION_EXPORT_SUPPORTED && (UNITY_ANIMATION || !UNITY_2019_1_OR_NEWER)
 #define ANIMATION_SUPPORTED
-#endif
 
 using System;
 using System.Collections.Generic;
@@ -15,7 +10,6 @@ using GLTF.Schema;
 using Unity.Profiling;
 using UnityEngine;
 using UnityGLTF.Extensions;
-using WrapMode = GLTF.Schema.WrapMode;
 
 namespace UnityGLTF
 {
