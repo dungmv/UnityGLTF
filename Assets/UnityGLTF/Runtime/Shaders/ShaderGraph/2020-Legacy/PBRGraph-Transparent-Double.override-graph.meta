@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: a975426dc0d1c41a7b7d574e2c0ec9fd
+ScriptedImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 2
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+  script: {instanceID: 0}
+  sourceShader: {instanceID: 0}
+  upgradeShader: {instanceID: 0}
+  forceTransparent: 1
+  forceDoublesided: 0
+  hideShader: 1
