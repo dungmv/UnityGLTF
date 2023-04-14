@@ -1,14 +1,9 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using Newtonsoft.Json;
 using ReadyPlayerMe.AvatarLoader;
-using TMPro;
 using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Playables;
-using UnityEngine.UI;
-using GLTFast;
 using UnityGLTF;
 using WrapMode = UnityEngine.WrapMode;
 
@@ -32,17 +27,11 @@ public class AnimatorMaker : MonoBehaviour
 
     [SerializeField] private AnimationClip[] clips;
     [SerializeField] private Animator animator;
-    [SerializeField] private RectTransform animationContainer;
-    [SerializeField] private Button prefabItem;
-    [SerializeField] private float time;
-    
+
     private PlayableGraph playableGraph;
     private AnimationClipPlayable playableClip;
 
 #if UNITY_WEBGL
-    [DllImport("__Internal")]
-    private static extern void AnimationSelected(int id);
-
     [DllImport("__Internal")]
     private static extern void OnAvatarLoadCompleted(string url);
 
@@ -51,6 +40,8 @@ public class AnimatorMaker : MonoBehaviour
 
     [DllImport("__Internal")]
     private static extern void OnAvatarCombineCompleted(byte[] data, int size);
+    [DllImport("__Internal")]
+    private static extern void OnInitialized(string animations);
 #endif
 
     private void Start()
@@ -74,33 +65,15 @@ public class AnimatorMaker : MonoBehaviour
         
         PlayAnimationById(0);
 
+        var animNames = new string[clips.Length];
         for (int i = 0; i < clips.Length; i++)
         {
-            int animId = i;
-            var clip = clips[animId];
-            var item = Instantiate(prefabItem, Vector3.zero, Quaternion.identity, animationContainer);
-            item.gameObject.SetActive(true);
-            item.gameObject.name = clip.name;
-            item.GetComponentInChildren<TMP_Text>().text = clip.name;
-            item.onClick.AddListener(() => { PlayAnimationById(animId); });
+            animNames[i] = clips[i].name;
         }
-#if !UNITY_EDITOR && UNITY_WEBGL
+// #if !UNITY_EDITOR && UNITY_WEBGL
+        OnInitialized(JsonConvert.SerializeObject(animNames));
         WebGLInput.captureAllKeyboardInput = false;
-#endif
-    }
-
-    private void OnEnable()
-    {
-        //TouchSimulation.Enable();
-        //EnhancedTouchSupport.Enable
-        //UnityEngine.InputSystem.EnhancedTouch.Touch.onFingerMove += OnTouchMove;
-    }
-
-    private void OnDisable()
-    {
-        //UnityEngine.InputSystem.EnhancedTouch.Touch.onFingerMove -= OnTouchMove;
-        //TouchSimulation.Disable();
-        //EnhancedTouchSupport.Disable();
+// #endif
     }
 
     private void OnDestroy()
@@ -158,9 +131,6 @@ public class AnimatorMaker : MonoBehaviour
     public void PlayAnimationById(int id)
     {
         PlayAnimation(clips[id]);
-#if UNITY_WEBGL && !UNITY_EDITOR
-        AnimationSelected(id);
-#endif
     }
 
     public void PlayAnimation(AnimationClip clip)
@@ -184,52 +154,15 @@ public class AnimatorMaker : MonoBehaviour
     //    }
     //}
 
-    async public void LoadModelFromGLTF()
+    public void CombineAvatarWithAnimations(string data)
     {
-        var setting = new ImportSettings();
-        var gltf = new GltfImport();
-        bool success = await gltf.Load(avatarUrl, setting);
-        if (!success)
-        {
-            Debug.LogWarning("Can not load model");
-            return;
-        }
-        var go = new GameObject("Avatar");
-        go.transform.parent = transform;
-
-        GltFastGameObjectInstantiator customInstantiator = new GltFastGameObjectInstantiator(gltf, go.transform);
-        success = await gltf.InstantiateMainSceneAsync(customInstantiator);
-        if (!success)
-        {
-            Debug.Log("Can not instantiate model");
-            return;
-        }
-
-        if (previewAvatar != null)
-        {
-            Destroy(previewAvatar);
-            previewAvatar = null;
-        }
-
-        go.AddComponent<Animator>();
-
-        SetupAvatar(go);
-        Debug.Log("Load model completed!");
-    }
-
-    [ContextMenu("Export GLB")]
-    public void ExportAvatarWithAnimationClip()
-    {
-        // GLTFRecorder recorder = new GLTFRecorder(avatar.transform);
-        // recorder.StartRecording(0);
-        // recorder.UpdateRecording(1);
-        // recorder.EndRecording("Avatar@run.glb");
-
+        var animIds = JsonConvert.DeserializeObject<int[]>(data);
         var options = new ExportOptions();
         options.AfterSceneExport += (sceneExporter, root) =>
         {
-            foreach (var clip in clips)
+            for (var i = 0; i < animIds.Length; i++)
             {
+                var clip = clips[i];
                 sceneExporter.ExportAnimationClip(clip, clip.name, avatar.transform, 1);
             }
         };

@@ -15,5 +15,8 @@ mergeInto(LibraryManager.library, {
             bytes[i] = HEAPU8[data + i];
         }
         window.dispatchReactUnityEvent("OnAvatarCombineCompleted", bytes, size);
+    },
+    OnInitialized: function(animations) {
+        window.dispatchReactUnityEvent("OnInitialized", JSON.parse(UTF8ToString(animations)));
     }
 });
