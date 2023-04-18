@@ -1,6 +1,12 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.ComTypes;
 using Newtonsoft.Json;
 using ReadyPlayerMe.AvatarLoader;
+using UnityGIF;
+using UnityGIF.Data;
 using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Playables;
@@ -9,27 +15,17 @@ using WrapMode = UnityEngine.WrapMode;
 
 public class AnimatorMaker : MonoBehaviour
 {
-    [SerializeField] [Tooltip("RPM avatar URL or shortcode to load")]
-    private string avatarUrl;
-
     private GameObject avatar;
     private AvatarObjectLoader avatarObjectLoader;
 
     [SerializeField] [Tooltip("Animator to use on loaded avatar")]
     private RuntimeAnimatorController animatorController;
 
-    [SerializeField] [Tooltip("If true it will try to load avatar from avatarUrl on start")]
-    private bool loadOnStart = true;
-
-    [SerializeField]
-    [Tooltip("Preview avatar to display until avatar loads. Will be destroyed after new avatar is loaded")]
-    private GameObject previewAvatar;
-
     [SerializeField] private AnimationClip[] clips;
     [SerializeField] private Animator animator;
+    [SerializeField] private Camera mainCamera;
 
     private PlayableGraph playableGraph;
-    private AnimationClipPlayable playableClip;
 
 #if UNITY_WEBGL
     [DllImport("__Internal")]
@@ -53,27 +49,15 @@ public class AnimatorMaker : MonoBehaviour
         avatarObjectLoader.OnCompleted += OnLoadCompleted;
         avatarObjectLoader.OnFailed += OnLoadFailed;
 
-        if (previewAvatar != null)
-        {
-            SetupAvatar(previewAvatar);
-        }
-
-        if (loadOnStart)
-        {
-            LoadAvatar(avatarUrl);
-        }
-        
-        PlayAnimationById(0);
-
+#if !UNITY_EDITOR && UNITY_WEBGL
         var animNames = new string[clips.Length];
         for (int i = 0; i < clips.Length; i++)
         {
             animNames[i] = clips[i].name;
         }
-// #if !UNITY_EDITOR && UNITY_WEBGL
         OnInitialized(JsonConvert.SerializeObject(animNames));
         WebGLInput.captureAllKeyboardInput = false;
-// #endif
+#endif
     }
 
     private void OnDestroy()
@@ -90,12 +74,6 @@ public class AnimatorMaker : MonoBehaviour
 
     private void OnLoadCompleted(object sender, CompletionEventArgs args)
     {
-        if (previewAvatar != null)
-        {
-            Destroy(previewAvatar);
-            previewAvatar = null;
-        }
-
         SetupAvatar(args.Avatar);
 #if !UNITY_EDITOR && UNITY_WEBGL
         OnAvatarLoadCompleted(args.Url);
@@ -121,10 +99,8 @@ public class AnimatorMaker : MonoBehaviour
         animator.applyRootMotion = false;
     }
 
-    public void LoadAvatar(string url)
+    public void LoadAvatar(string avatarUrl)
     {
-        //remove any leading or trailing spaces
-        avatarUrl = url.Trim(' ');
         avatarObjectLoader.LoadAvatar(avatarUrl);
     }
 
@@ -138,7 +114,7 @@ public class AnimatorMaker : MonoBehaviour
         var playableOutput = AnimationPlayableOutput.Create(playableGraph, "AnimationClip", animator);
         // Wrap the clip in a playable
         clip.wrapMode = WrapMode.Loop;
-        playableClip = AnimationClipPlayable.Create(playableGraph, clip);
+        var playableClip = AnimationClipPlayable.Create(playableGraph, clip);
         // Connect the Playable to an output
         playableOutput.SetSourcePlayable(playableClip);
         // Plays the Graph.
@@ -162,7 +138,7 @@ public class AnimatorMaker : MonoBehaviour
         {
             for (var i = 0; i < animIds.Length; i++)
             {
-                var clip = clips[i];
+                var clip = clips[animIds[i]];
                 sceneExporter.ExportAnimationClip(clip, clip.name, avatar.transform, 1);
             }
         };
@@ -172,6 +148,75 @@ public class AnimatorMaker : MonoBehaviour
 #if UNITY_WEBGL && !UNITY_EDITOR
         OnAvatarCombineCompleted(bytes, bytes.Length);
 #endif
+    }
+
+    public void CreateGif()
+    {
+        var goCam = new GameObject();
+        var cam = goCam.AddComponent<Camera>();
+        cam.CopyFrom(mainCamera);
+        cam.enabled = false;
+
+        RenderTexture renderTexture = new RenderTexture(cam.pixelWidth, cam.pixelHeight, 24);
+        UnityEngine.Texture2D screenShot = new UnityEngine.Texture2D(cam.pixelWidth, cam.pixelHeight, TextureFormat.RGBA32, false);
+        cam.targetTexture = renderTexture;
+
+
+        var frames = new List<GifFrame>();
+
+        var clip = clips[0];
+        var playableGraph = PlayableGraph.Create();
+        var animationClipPlayable = (Playable)AnimationClipPlayable.Create(playableGraph, clip);
+
+        var playableOutput = AnimationPlayableOutput.Create(playableGraph, "Animation", avatar.GetComponent<Animator>());
+        playableOutput.SetSourcePlayable(animationClipPlayable);
+        playableGraph.SetTimeUpdateMode(DirectorUpdateMode.Manual);
+
+        var timeStep = 1.0f / 5.0f;
+
+        var currentRT = RenderTexture.active;
+        RenderTexture.active = cam.targetTexture;
+        for (int i = 0; i < 7; i++)
+        {
+            playableGraph.Evaluate(timeStep);
+
+            cam.Render();
+            screenShot.ReadPixels(new Rect(0, 0, cam.targetTexture.width, cam.targetTexture.height), 0, 0);
+            screenShot.Apply();
+
+            var frame = new GifFrame();
+            frame.Delay = timeStep;
+            frame.Texture = new UnityGIF.Data.Texture2D(screenShot.width, screenShot.height);
+            frame.Texture.SetPixels32(Convert(screenShot.GetPixels()));
+            frame.ApplyPalette(UnityGIF.Enums.MasterPalette.Levels676);
+            frames.Add(frame);
+        }
+        RenderTexture.active = currentRT;
+
+        Gif gif = new Gif(frames);
+        var bytes = gif.Encode();
+        Debug.Log(bytes.Length);
+
+        playableGraph.Destroy();
+        using (FileStream fs = new FileStream("avatar.gif", FileMode.OpenOrCreate))
+        {
+            BinaryWriter writer = new BinaryWriter(fs);
+            writer.Write(bytes);
+        }
+    }
+
+    private UnityGIF.Data.Color32[] Convert(Color[] pixels)
+    {
+        var colors = new UnityGIF.Data.Color32[pixels.Length];
+        for (int i = 0;i<pixels.Length; i++)
+        {
+            byte r = (byte)(pixels[i].r * 255);
+            byte g = (byte)(pixels[i].g * 255);
+            byte b = (byte)(pixels[i].b * 255);
+            byte a = (byte)(pixels[i].a * 255);
+            colors[i] = new UnityGIF.Data.Color32(r, g, b, a);
+        }
+        return colors;
     }
 }
 
