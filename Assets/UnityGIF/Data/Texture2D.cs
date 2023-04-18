@@ -21,7 +21,20 @@ namespace UnityGIF.Data
 			this.height = height;
 		}
 
-		public void SetPixels32(Color32[] pixels)
+        public void SetPixelsFloat(UnityEngine.Color[] pixels)
+        {
+            _pixels = new UnityGIF.Data.Color32[pixels.Length];
+            for (int i = 0; i < pixels.Length; i++)
+            {
+                byte r = (byte)(pixels[i].r * 255);
+                byte g = (byte)(pixels[i].g * 255);
+                byte b = (byte)(pixels[i].b * 255);
+                byte a = (byte)(255);
+                _pixels[i] = new UnityGIF.Data.Color32(r, g, b, a);
+            }
+        }
+
+        public void SetPixels32(Color32[] pixels)
 		{
 			_pixels = pixels.ToArray();
 		}

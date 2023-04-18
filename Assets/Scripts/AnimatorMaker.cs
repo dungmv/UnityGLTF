@@ -187,8 +187,8 @@ public class AnimatorMaker : MonoBehaviour
             var frame = new GifFrame();
             frame.Delay = timeStep;
             frame.Texture = new UnityGIF.Data.Texture2D(screenShot.width, screenShot.height);
-            frame.Texture.SetPixels32(Convert(screenShot.GetPixels()));
-            frame.ApplyPalette(UnityGIF.Enums.MasterPalette.Levels676);
+            frame.Texture.SetPixelsFloat(screenShot.GetPixels());
+            frame.ApplyPalette(UnityGIF.Enums.MasterPalette.Levels666);
             frames.Add(frame);
         }
         RenderTexture.active = currentRT;
@@ -203,20 +203,6 @@ public class AnimatorMaker : MonoBehaviour
             BinaryWriter writer = new BinaryWriter(fs);
             writer.Write(bytes);
         }
-    }
-
-    private UnityGIF.Data.Color32[] Convert(Color[] pixels)
-    {
-        var colors = new UnityGIF.Data.Color32[pixels.Length];
-        for (int i = 0;i<pixels.Length; i++)
-        {
-            byte r = (byte)(pixels[i].r * 255);
-            byte g = (byte)(pixels[i].g * 255);
-            byte b = (byte)(pixels[i].b * 255);
-            byte a = (byte)(pixels[i].a * 255);
-            colors[i] = new UnityGIF.Data.Color32(r, g, b, a);
-        }
-        return colors;
     }
 }
 
