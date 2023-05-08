@@ -8,9 +8,14 @@ using UnityEngine.Networking;
 using GLTFast;
 using Unity.VisualScripting.Antlr3.Runtime;
 using UnityEngine.XR;
+using ReadyPlayerMe.Core;
 
+// sample avatar
+// Feminine https://models.readyplayer.me/645938677cf7d03f60e0b4e3.glb /1.73628
+// Masculine https://models.readyplayer.me/6423ac9aa9cf14ab7e456f88.glb /1.86452
 public class ModelViewer : MonoBehaviour
 {
+
     // Use this for initialization
     void Start()
     {
@@ -28,7 +33,7 @@ public class ModelViewer : MonoBehaviour
         StartCoroutine(DownloadAvatar(url));
     }
 
-    IEnumerator DownloadAvatar(string url)
+    private IEnumerator DownloadAvatar(string url)
     {
         using (var webRequest = UnityWebRequest.Get(url))
         {
@@ -43,7 +48,7 @@ public class ModelViewer : MonoBehaviour
         }
     }
 
-    public async void ImportAvatar(byte[] bytes, string url)
+    private async void ImportAvatar(byte[] bytes, string url)
     {
         GltfImport gltf = new GltfImport();
         if (await gltf.LoadGltfBinary(bytes, new Uri(url)))
@@ -52,7 +57,24 @@ public class ModelViewer : MonoBehaviour
             avatar.SetActive(true);
             GltFastGameObjectInstantiator customInstantiator = new GltFastGameObjectInstantiator(gltf, avatar.transform);
             await gltf.InstantiateMainSceneAsync(customInstantiator);
+            SetupAnimator(avatar);
         }
+    }
+
+    private void SetupAnimator(GameObject model)
+    {
+        var gender = DetectGender(model);
+        string text = ((gender == OutfitGender.Masculine) ? "AnimationAvatars/MasculineAnimationAvatar" : "AnimationAvatars/FeminineAnimationAvatar");
+        Animator val = model.AddComponent<Animator>();
+        val.avatar = Resources.Load<Avatar>(text);
+        val.applyRootMotion = true;
+    }
+
+    private OutfitGender DetectGender(GameObject avatar)
+    {
+        var headTop = avatar.transform.Find("Armature/Hips/Spine/Spine1/Spine2/Neck/Head/HeadTop_End");
+        Debug.Log(headTop.position.y);
+        return headTop.position.y > 1.8f ? OutfitGender.Masculine : OutfitGender.Feminine;
     }
 
     public void RunAnimation(string animationName)
