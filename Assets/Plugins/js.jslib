@@ -16,7 +16,45 @@ mergeInto(LibraryManager.library, {
         }
         window.dispatchReactUnityEvent("OnAvatarCombineCompleted", bytes, size);
     },
+    OnGifCompleted: function(data, size) {
+        const bytes = new Uint8Array(size);
+        for (var i = 0; i < size; i++)
+        {
+            bytes[i] = HEAPU8[data + i];
+        }
+        window.dispatchReactUnityEvent("OnGifCompleted", bytes, size);
+    },
     OnInitialized: function(animations) {
         window.dispatchReactUnityEvent("OnInitialized", JSON.parse(UTF8ToString(animations)));
+    },
+    // override default callback
+    emscripten_set_wheel_callback_on_thread: function (
+        target,
+        userData,
+        useCapture,
+        callbackfunc,
+        targetThread
+    ) {
+        target = findEventTarget(target);
+ 
+        // the fix
+        if (!target) {
+            return -4;
+        }
+ 
+        if (typeof target.onwheel !== 'undefined') {
+            registerWheelEventCallback(
+                target,
+                userData,
+                useCapture,
+                callbackfunc,
+                9,
+                'wheel',
+                targetThread
+            );
+            return 0;
+        } else {
+            return -1;
+        }
     }
 });

@@ -36,6 +36,10 @@ public class AnimatorMaker : MonoBehaviour
 
     [DllImport("__Internal")]
     private static extern void OnAvatarCombineCompleted(byte[] data, int size);
+
+    [DllImport("__Internal")]
+    private static extern void OnGifCompleted(byte[] data, int size);
+
     [DllImport("__Internal")]
     private static extern void OnInitialized(string animations);
 #endif
@@ -150,7 +154,7 @@ public class AnimatorMaker : MonoBehaviour
 #endif
     }
 
-    public void CreateGif()
+    public void CreateGif(int animationId)
     {
         var goCam = new GameObject();
         var cam = goCam.AddComponent<Camera>();
@@ -164,7 +168,7 @@ public class AnimatorMaker : MonoBehaviour
 
         var frames = new List<GifFrame>();
 
-        var clip = clips[0];
+        var clip = clips[animationId];
         var playableGraph = PlayableGraph.Create();
         var animationClipPlayable = (Playable)AnimationClipPlayable.Create(playableGraph, clip);
 
@@ -172,11 +176,11 @@ public class AnimatorMaker : MonoBehaviour
         playableOutput.SetSourcePlayable(animationClipPlayable);
         playableGraph.SetTimeUpdateMode(DirectorUpdateMode.Manual);
 
-        var timeStep = 1.0f / 5.0f;
+        var timeStep = 1.0f / 3.0f;
 
         var currentRT = RenderTexture.active;
         RenderTexture.active = cam.targetTexture;
-        for (int i = 0; i < 7; i++)
+        for (int i = 0; i < 21; i++)
         {
             playableGraph.Evaluate(timeStep);
 
@@ -198,11 +202,14 @@ public class AnimatorMaker : MonoBehaviour
         Debug.Log(bytes.Length);
 
         playableGraph.Destroy();
-        using (FileStream fs = new FileStream("avatar.gif", FileMode.OpenOrCreate))
-        {
-            BinaryWriter writer = new BinaryWriter(fs);
-            writer.Write(bytes);
-        }
+#if UNITY_WEBGL && !UNITY_EDITOR
+        OnGifCompleted(bytes, bytes.Length);
+#endif
+    }
+
+    public void Quit()
+    {
+        Application.Quit();
     }
 }
 
