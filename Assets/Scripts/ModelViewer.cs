@@ -1,16 +1,12 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System;
-using System.Threading;
-using System.Threading.Tasks;
 using ReadyPlayerMe.AvatarLoader;
 using UnityEngine.Networking;
 using GLTFast;
-using Unity.VisualScripting.Antlr3.Runtime;
-using UnityEngine.XR;
-using ReadyPlayerMe.Core;
 using UnityEngine.Animations;
 using UnityEngine.Playables;
+using System.Runtime.InteropServices;
 
 // sample avatar
 // Feminine https://models.readyplayer.me/645938677cf7d03f60e0b4e3.glb /1.73628
@@ -21,12 +17,21 @@ public class ModelViewer : MonoBehaviour
 
     private PlayableGraph playableGraph;
     private Animator animator;
-
+#if UNITY_IOS || UNITY_TVOS
+    [DllImport("__Internal")]
+    public static extern void onAvatarLoadCompleted(string url);
+    [DllImport("__Internal")]
+    public static extern void onInitialized();
+#endif
     // Use this for initialization
     void Start()
     {
         playableGraph = PlayableGraph.Create();
-        Load("https://models.readyplayer.me/6423ac9aa9cf14ab7e456f88.glb");
+        // Load("https://models.readyplayer.me/6423ac9aa9cf14ab7e456f88.glb");
+        // Load("https://models.readyplayer.me/645938677cf7d03f60e0b4e3.glb");
+#if UNITY_IOS || UNITY_TVOS
+        onInitialized();
+#endif
     }
 
     private void OnDestroy()
@@ -70,16 +75,24 @@ public class ModelViewer : MonoBehaviour
             GltFastGameObjectInstantiator customInstantiator = new GltFastGameObjectInstantiator(gltf, avatar.transform);
             await gltf.InstantiateMainSceneAsync(customInstantiator);
             SetupAnimator(avatar);
+            
         }
+#if UNITY_IOS || UNITY_TVOS
+        onAvatarLoadCompleted(url);
+#endif
     }
 
     private void SetupAnimator(GameObject model)
     {
-        AvatarBuilder.BuildHumanAvatar(model, new HumanDescription() { });
+        // val.avatar = AvatarBuilder.BuildHumanAvatar(model, new HumanDescription()
+        // {
+        //     human = humanBones,
+        // });
         var gender = DetectGender(model);
         string text = ((gender == OutfitGender.Masculine) ? "AnimationAvatars/MasculineAnimationAvatar" : "AnimationAvatars/FeminineAnimationAvatar");
         Animator val = model.AddComponent<Animator>();
         val.avatar = Resources.Load<Avatar>(text);
+        val.avatar.name = "avatar";
         val.applyRootMotion = true;
 
         // setup animator
@@ -94,8 +107,9 @@ public class ModelViewer : MonoBehaviour
         return headTop.position.y > 1.8f ? OutfitGender.Masculine : OutfitGender.Feminine;
     }
 
-    public void RunAnimation(int id)
-	{
+    public void RunAnimation(string msg)
+    {
+        int id = Int32.Parse(msg);
         var clip = clips[id];
         var playableOutput = AnimationPlayableOutput.Create(playableGraph, "AnimationClip", animator);
         // Wrap the clip in a playable
