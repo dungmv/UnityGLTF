@@ -6,7 +6,7 @@
 // NativeCallsProtocol defines protocol with methods you want to be called from managed
 @protocol NativeCallsProtocol
 @required
-- (void) onAvatarLoadCompleted:(NSString*)url;
+- (void) onAvatarLoadCompleted:(NSString*)avatarName;
 - (void) onInitialized;
 // other methods
 @end

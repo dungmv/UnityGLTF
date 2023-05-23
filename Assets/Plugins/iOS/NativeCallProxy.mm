@@ -14,7 +14,7 @@ id<NativeCallsProtocol> api = NULL;
 
 
 extern "C" {
-    void onAvatarLoadCompleted(const char* url) { return [api onAvatarLoadCompleted:[NSString stringWithUTF8String:url]]; }
+    void onAvatarLoadCompleted(const char* avatarName) { return [api onAvatarLoadCompleted:[NSString stringWithUTF8String:avatarName]]; }
     void onInitialized() { return [api onInitialized]; }
 }
 
