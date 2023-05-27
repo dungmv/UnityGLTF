@@ -189,9 +189,9 @@ public class ModelViewer : MonoBehaviour
         }
     }
 
-    public void SetZoom(float zoom)
+    public void SetFoV(float fov)
     {
-        
+        mainCamera.fieldOfView = fov;
     }
 }
 
