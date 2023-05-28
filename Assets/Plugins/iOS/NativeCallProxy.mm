@@ -12,9 +12,15 @@ id<NativeCallsProtocol> api = NULL;
 
 @end
 
-
 extern "C" {
-    void onAvatarLoadCompleted(const char* avatarName) { return [api onAvatarLoadCompleted:[NSString stringWithUTF8String:avatarName]]; }
-    void onInitialized() { return [api onInitialized]; }
+    void onAvatarLoadCompleted(const char* avatarId) { [api onAvatarLoadCompleted:[NSString stringWithUTF8String:avatarId]]; }
+    void onInitialized() { [api onInitialized]; }
+    
+    void registerLoadAvatarDelegate(LoadAvatarDelegate func) { [api registerLoadAvatarDelegate: func]; }
+    void registerSetBackgroundColorDelegate(SetBackgroundColorCallback func) { [api registerSetBackgroundColorDelegate: func]; }
+    void registerSetFoVDelegate(SetFoVDelegate func) { [api registerSetFoVDelegate: func]; }
+    void registerRunAnimationDelegate(RunAnimationDelegate func) { [api registerRunAnimationDelegate: func]; }
+    void registerSetPositionAvatarDelegate(SetPositionAvatarDelegate func) { [api registerSetPositionAvatarDelegate: func]; }
+    void registerSetPositionCameraDelegate(SetPositionCameraDelegate func) { [api registerSetPositionCameraDelegate: func]; }
+    
 }
-

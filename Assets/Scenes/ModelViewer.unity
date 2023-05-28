@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.18028305, g: 0.22571313, b: 0.3069213, a: 1}
+  m_IndirectSpecularColor: {r: 0.18018535, g: 0.22559482, b: 0.30677685, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -277,8 +277,8 @@ Camera:
   m_GameObject: {fileID: 296253107}
   m_Enabled: 1
   serializedVersion: 2
-  m_ClearFlags: 1
-  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_ClearFlags: 2
+  m_BackGroundColor: {r: 1, g: 1, b: 1, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -301,7 +301,7 @@ Camera:
     height: 1
   near clip plane: 0.3
   far clip plane: 1000
-  field of view: 60
+  field of view: 30
   orthographic: 0
   orthographic size: 5
   m_Depth: -1
@@ -326,14 +326,14 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 296253107}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: 0, y: 0.0052359584, z: 0, w: 0.9999863}
   m_LocalPosition: {x: 0, y: 1, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0.6, z: 0}
 --- !u!114 &296253111
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -388,7 +388,7 @@ GameObject:
   - component: {fileID: 597020730}
   - component: {fileID: 597020729}
   m_Layer: 0
-  m_Name: AvatarLoader
+  m_Name: ModelViewer
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -406,6 +406,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e7c8ccd108bff4fe0b57326d82da424b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  mainCamera: {fileID: 296253109}
+  clips:
+  - {fileID: 7400000, guid: 55cbb1911c9775242862fc64bb7762ab, type: 2}
+  - {fileID: 7400000, guid: 84948f5ac5b954ad4a92767f9f704444, type: 2}
+  - {fileID: 7400000, guid: fb2a8730ec85842a5bfad404d803f409, type: 2}
+  - {fileID: 7400000, guid: 8f17903f91b724f7a98c5fe86a33c765, type: 2}
+  - {fileID: 7400000, guid: f56845204675a7642814162addcd910d, type: 2}
+  - {fileID: 7400000, guid: 56043eddbb226467b80d177dba2bbff0, type: 2}
+  - {fileID: 7400000, guid: 4ff00dd57e070426882b8db30d56ead8, type: 2}
+  - {fileID: 7400000, guid: b5a620babc1ce41178c32d731153ca37, type: 2}
+  - {fileID: 7400000, guid: 2989b9c0384244f7ba19f6a1e0413d96, type: 2}
+  - {fileID: 7400000, guid: dd7352bf28e36413a890981264b8be9f, type: 2}
+  - {fileID: 7400000, guid: 76f0229f763c6714f9f7d3ce482542d7, type: 2}
+  - {fileID: 7400000, guid: 33241f023068e48e9ad46a8b7d096af1, type: 2}
+  - {fileID: 7400000, guid: 0aa97ea6e16f14399b063deaf14a7688, type: 2}
+  - {fileID: 7400000, guid: 4fa852f49f6814d2ca90be7a534a9cdc, type: 2}
+  - {fileID: 7400000, guid: 5f0f697ac9d244d8a9365c9b6b7153d9, type: 2}
+  avatarPrefab: {fileID: 7120223005812613720, guid: 40fcb4986b68e4e1aadbd1dd608dba44,
+    type: 3}
 --- !u!4 &597020730
 Transform:
   m_ObjectHideFlags: 0

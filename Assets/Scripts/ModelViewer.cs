@@ -8,26 +8,15 @@ using GLTFast;
 using UnityEngine.Animations;
 using UnityEngine.Playables;
 using System.Runtime.InteropServices;
-using Newtonsoft.Json;
+using AOT;
+using UnityEngine.Events;
 
 // sample avatar
 // Feminine https://models.readyplayer.me/645938677cf7d03f60e0b4e3.glb /1.73628
 // Masculine https://models.readyplayer.me/6423ac9aa9cf14ab7e456f88.glb /1.86452
 public class ModelViewer : MonoBehaviour
 {
-    public class LoadAvatarData
-    {
-        public string id;
-        public string name;
-        public string status;
-        public string url;
-        public Vector3 position;
-    }
-    public class RunAnimationData
-    {
-        public string id;
-        public int animationId;
-    }
+    private static ModelViewer _self;
 
     [SerializeField] private Camera mainCamera;
     [SerializeField] private AnimationClip[] clips;
@@ -45,6 +34,7 @@ public class ModelViewer : MonoBehaviour
     // Use this for initialization
     void Start()
     {
+        _self = this;
         avatarDict = new Dictionary<string, AvatarController>();
         playableGraph = PlayableGraph.Create();
 #if UNITY_EDITOR
@@ -61,20 +51,22 @@ public class ModelViewer : MonoBehaviour
 #if UNITY_IOS && !UNITY_EDITOR
         onInitialized();
 #endif
+#if UNITY_IOS
+        registerLoadAvatarDelegate(LoadAvatarCallback);
+        registerSetBackgroundColorDelegate(SetBackgroundColorCallback);
+        registerSetFoVDelegate(SetFoVCallback);
+        registerRunAnimationDelegate(RunAnimationCallback);
+        registerSetPositionAvatarDelegate(SetPositionAvatarCallback);
+        registerSetPositionCameraDelegate(SetPositionCameraCallback);
+#endif
     }
 
     private void OnDestroy()
     {
         playableGraph.Destroy();
+        _self = null;
     }
-
-    //// Update is called once per frame
-    //void Update()
-    //{
-
-    //}
-
-
+    
     private IEnumerator DownloadAvatar(string avatarId, string url, string avatarName, string avatarStatus, Vector3 position)
     {
         using (var webRequest = UnityWebRequest.Get(url))
@@ -118,7 +110,7 @@ public class ModelViewer : MonoBehaviour
             avatarDict[avatarId] = go;
         }
 #if UNITY_IOS && !UNITY_EDITOR
-        onAvatarLoadCompleted(avatarName);
+        onAvatarLoadCompleted(avatarId);
 #endif
     }
 
@@ -142,27 +134,25 @@ public class ModelViewer : MonoBehaviour
         return headTop.position.y > 1.8f ? OutfitGender.Masculine : OutfitGender.Feminine;
     }
 
-    public void LoadAvatar(string json)
+    // call from ios/android
+    public void LoadAvatar(string id, string url, string avatarName,string status, float x, float y, float z)
     {
-        var data = JsonUtility.FromJson<LoadAvatarData>(json);
-        StartCoroutine(DownloadAvatar(data.id, data.url, data.name, data.status, data.position));
+        StartCoroutine(DownloadAvatar(id, url, avatarName, status, new Vector3(x, y, z)));
     }
 
-    public void SetPositionAvatar(string json)
+    public void SetPositionAvatar(string avatarId, float x, float y, float z)
     {
-        var data = JsonUtility.FromJson<LoadAvatarData>(json);
-        if (avatarDict.TryGetValue(data.id, out var avatar))
+        if (avatarDict.TryGetValue(avatarId, out var avatar))
         {
-            avatar.transform.position = data.position;
+            avatar.transform.position = new Vector3(x, y, z);
         }
     }
 
-    public void RunAnimation(string json)
+    public void RunAnimation(string avatarId, int animationId)
     {
-        var data = JsonUtility.FromJson<RunAnimationData>(json);
-        if (avatarDict.TryGetValue(data.id, out var avatar))
+        if (avatarDict.TryGetValue(avatarId, out var avatar))
         {
-            var clip = clips[data.animationId];
+            var clip = clips[animationId];
             var animator = avatar.avatar.GetComponent<Animator>();
             var playableOutput = AnimationPlayableOutput.Create(playableGraph, "AnimationClip", animator);
             // Wrap the clip in a playable
@@ -175,10 +165,9 @@ public class ModelViewer : MonoBehaviour
         }
     }
 
-    public void SetPositionCamera(string json)
+    public void SetPositionCamera(float x, float y, float z)
     {
-        var newPos = JsonUtility.FromJson<Vector3>(json);
-        mainCamera.transform.position = newPos;
+        mainCamera.transform.position = new Vector3(x, y, z);
     }
 
     public void SetBackgroundColor(string color)
@@ -193,5 +182,77 @@ public class ModelViewer : MonoBehaviour
     {
         mainCamera.fieldOfView = fov;
     }
+    
+#if UNITY_IOS
+    public delegate void LoadAvatarDelegate(string id, string url, string name,string status, float x, float y, float z);
+    [DllImport("__Internal")]
+    public static extern void registerLoadAvatarDelegate(LoadAvatarDelegate cb);
+    [MonoPInvokeCallback(typeof(LoadAvatarDelegate))]
+    public static void LoadAvatarCallback(string id, string url, string name,string status, float x, float y, float z)
+    {
+        if (_self != null)
+        {
+            _self.LoadAvatar(id, url, name, status, x, y, z);
+        }
+    }
+
+    public delegate void SetPositionAvatarDelegate(string avatarId, float x, float y, float z);
+
+    [DllImport("__Internal")]
+    public static extern void registerSetPositionAvatarDelegate(SetPositionAvatarDelegate cb);
+    [MonoPInvokeCallback(typeof(SetPositionAvatarDelegate))]
+    public static void SetPositionAvatarCallback(string avatarId, float x, float y, float z)
+    {
+        if (_self != null)
+        {
+            _self.SetPositionAvatar(avatarId, x, y, z);
+        }
+    }
+    [DllImport("__Internal")]
+    public static extern void registerSetPositionCameraDelegate(UnityAction<float, float, float> cb);
+    [MonoPInvokeCallback(typeof(UnityAction<float, float, float>))]
+    public static void SetPositionCameraCallback(float x, float y, float z)
+    {
+        if (_self != null)
+        {
+            _self.SetPositionCamera(x, y, z);
+        }
+    }
+    
+    [DllImport("__Internal")]
+    public static extern void registerSetBackgroundColorDelegate(UnityAction<string> cb);
+    [MonoPInvokeCallback(typeof(UnityAction<string>))]
+    public static void SetBackgroundColorCallback(string color)
+    {
+        if (_self != null)
+        {
+            _self.SetBackgroundColor(color);
+        }
+    }
+
+    [DllImport("__Internal")]
+    public static extern void registerSetFoVDelegate(UnityAction<float> cb);
+    [MonoPInvokeCallback(typeof(UnityAction<float>))]
+    public static void SetFoVCallback(float fov)
+    {
+        if (_self != null)
+        {
+            _self.SetFoV(fov);
+        }
+    }
+
+    [DllImport("__Internal")]
+    public static extern void registerRunAnimationDelegate(UnityAction<string, int> cb);
+
+    [MonoPInvokeCallback(typeof(UnityAction<string, int>))]
+    public static void RunAnimationCallback(string avatarId, int animationId)
+    {
+        if (_self != null)
+        {
+            _self.RunAnimation(avatarId, animationId);
+        }
+    }
+    
+#endif
 }
 
