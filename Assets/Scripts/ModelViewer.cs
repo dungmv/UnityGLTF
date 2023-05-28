@@ -48,9 +48,7 @@ public class ModelViewer : MonoBehaviour
 
         SetBackgroundColor("#00FF00");
 #endif
-#if UNITY_IOS && !UNITY_EDITOR
-        onInitialized();
-#endif
+
 #if UNITY_IOS
         registerLoadAvatarDelegate(LoadAvatarCallback);
         registerSetBackgroundColorDelegate(SetBackgroundColorCallback);
@@ -58,6 +56,18 @@ public class ModelViewer : MonoBehaviour
         registerRunAnimationDelegate(RunAnimationCallback);
         registerSetPositionAvatarDelegate(SetPositionAvatarCallback);
         registerSetPositionCameraDelegate(SetPositionCameraCallback);
+        
+        onInitialized();
+#elif UNITY_ANDROID
+        using (AndroidJavaClass jClass = new AndroidJavaClass("com.bluebelt.suzuverse.MainActivity"))
+        {
+            jClass.CallStatic("setCallBackListener", new AndroidUnityCallback());
+        }
+
+        using (AndroidJavaClass jClass = new AndroidJavaClass("com.bluebelt.suzuverse.MainActivity"))
+        {
+            jClass.CallStatic("onInitialized");
+        }
 #endif
     }
 
@@ -109,8 +119,13 @@ public class ModelViewer : MonoBehaviour
             // save
             avatarDict[avatarId] = go;
         }
-#if UNITY_IOS && !UNITY_EDITOR
+#if UNITY_IOS
         onAvatarLoadCompleted(avatarId);
+#elif UNITY_ANDROID
+        using (AndroidJavaClass jClass = new AndroidJavaClass("com.bluebelt.suzuverse.MainActivity"))
+        {
+            jClass.CallStatic("onAvatarLoadCompleted", avatarId);
+        }
 #endif
     }
 
@@ -252,7 +267,55 @@ public class ModelViewer : MonoBehaviour
             _self.RunAnimation(avatarId, animationId);
         }
     }
-    
+#elif UNITY_ANDROID
+    class AndroidUnityCallback : AndroidJavaProxy {
+        public AndroidUnityCallback() :   base("com.bluebelt.suzuverse.UnityCallback") { }
+        public void RunAnimationCallback(string avatarId, int animationId) {
+            if (_self != null)
+            {
+                _self.RunAnimation(avatarId, animationId);
+            }
+        }
+        public void SetFoVCallback(float fov)
+        {
+            if (_self != null)
+            {
+                _self.SetFoV(fov);
+            }
+        }
+
+        public void SetBackgroundColorCallback(string color)
+        {
+            if (_self != null)
+            {
+                _self.SetBackgroundColor(color);
+            }
+        }
+
+        public void SetPositionCameraCallback(float x, float y, float z)
+        {
+            if (_self != null)
+            {
+                _self.SetPositionCamera(x, y, z);
+            }
+        }
+
+        public void SetPositionAvatarCallback(string avatarId, float x, float y, float z)
+        {
+            if (_self != null)
+            {
+                _self.SetPositionAvatar(avatarId, x, y, z);
+            }
+        }
+
+        public void LoadAvatarCallback(string id, string url, string name,string status, float x, float y, float z)
+        {
+            if (_self != null)
+            {
+                _self.LoadAvatar(id, url, name, status, x, y, z);
+            }
+        }
+    }
 #endif
 }
 

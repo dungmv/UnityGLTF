@@ -9,9 +9,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: d2150814097e545a5b59aeb99222f7fa, type: 3}
   m_Name: UnityGLTFSettings
-  m_EditorClassIdentifier: UnityGLTFScripts:UnityGLTF:GLTFSettings
+  m_EditorClassIdentifier: 
   exportNames: 1
   exportFullPath: 0
   requireExtensions: 0
