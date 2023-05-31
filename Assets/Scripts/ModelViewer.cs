@@ -59,12 +59,12 @@ public class ModelViewer : MonoBehaviour
         
         onInitialized();
 #elif UNITY_ANDROID
-        using (AndroidJavaClass jClass = new AndroidJavaClass("com.wallet.walkthedog.UnityBridge"))
+        using (AndroidJavaClass jClass = new AndroidJavaClass("com.wallet.walkthedog.view.dating.UnityBridge"))
         {
             jClass.CallStatic("setCallBackListener", new AndroidUnityCallback());
         }
 
-        using (AndroidJavaClass jClass = new AndroidJavaClass("com.wallet.walkthedog.UnityBridge"))
+        using (AndroidJavaClass jClass = new AndroidJavaClass("com.wallet.walkthedog.view.dating.UnityBridge"))
         {
             jClass.CallStatic("onInitialized");
         }
@@ -122,7 +122,7 @@ public class ModelViewer : MonoBehaviour
 #if UNITY_IOS
         onAvatarLoadCompleted(avatarId);
 #elif UNITY_ANDROID
-        using (AndroidJavaClass jClass = new AndroidJavaClass("com.wallet.walkthedog.UnityBridge"))
+        using (AndroidJavaClass jClass = new AndroidJavaClass("com.wallet.walkthedog.view.dating.UnityBridge"))
         {
             jClass.CallStatic("onAvatarLoadCompleted", avatarId);
         }
@@ -269,7 +269,7 @@ public class ModelViewer : MonoBehaviour
     }
 #elif UNITY_ANDROID
     class AndroidUnityCallback : AndroidJavaProxy {
-        public AndroidUnityCallback() :   base("com.wallet.walkthedog.UnityCallback") { }
+        public AndroidUnityCallback() :   base("com.wallet.walkthedog.view.dating.UnityCallback") { }
         public void RunAnimationCallback(string avatarId, int animationId) {
             if (_self != null)
             {
